@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>실시간 예배 자막</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" type="module"></script>
+</head>
+<body>
+  <main class="broadcast-shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">LIVE CAPTION MONITOR</p>
+        <h1>실시간 예배 자막</h1>
+      </div>
+      <p class="source-time">현재 위치에서 시작</p>
+    </header>
+
+    <section class="video-panel" aria-label="원본 예배 영상">
+      <div class="video-frame">
+        <div id="player"></div>
+      </div>
+    </section>
+
+    <section class="control-bar" aria-label="자막 테스트 제어">
+      <div class="field-group">
+        <label for="delay">자막 지연</label>
+        <select id="delay" name="delay">
+          <option value="low" selected>낮음</option>
+          <option value="medium">보통</option>
+        </select>
+      </div>
+
+      <div class="button-group">
+        <button id="start-button" class="button button-primary" type="button">시작</button>
+        <button id="stop-button" class="button button-secondary" type="button" disabled>중지</button>
+      </div>
+
+      <div id="status-badge" class="status-badge" data-state="idle" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">대기</span>
+      </div>
+    </section>
+
+    <section class="caption-stage" aria-labelledby="caption-heading">
+      <div class="caption-stage-header">
+        <div>
+          <p class="eyebrow">ON-AIR TRANSCRIPT</p>
+          <h2 id="caption-heading">현재 자막</h2>
+        </div>
+        <span id="live-indicator" class="live-mark" data-state="idle" aria-hidden="true">대기</span>
+      </div>
+
+      <div id="caption-lines" class="caption-lines" aria-live="polite" aria-atomic="false">
+        <p id="caption-line-1" class="caption-line" aria-label="자막 첫째 줄"></p>
+        <p id="caption-line-2" class="caption-line" aria-label="자막 둘째 줄">시작하면 이곳에 자막이 표시됩니다.</p>
+      </div>
+    </section>
+
+    <p class="privacy-note">영상을 원하는 위치로 이동한 뒤 시작하세요. 오디오는 브라우저에서 로컬 자막 서버를 거쳐 OpenAI로 전송되어 전사됩니다. API 키는 로컬 서버에만 보관됩니다.</p>
+  </main>
+</body>
+</html>

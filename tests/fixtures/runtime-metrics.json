@@ -1,0 +1,11 @@
+{
+  "completed": true,
+  "reconnectCount": 0,
+  "metrics": {
+    "firstPartialLatenciesMs": [800, 1200],
+    "finalLatenciesMs": [1500, 2200],
+    "partialUpdateCount": 6,
+    "turnCount": 2,
+    "audioDurationMs": 900000
+  }
+}

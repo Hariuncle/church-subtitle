@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+.vscode/
+
+data/
+runs/
+artifacts/
+
+.env
+*.user
+*.suo
