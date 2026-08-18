@@ -16,7 +16,7 @@
 - Modify: `tests/web-ui/app.test.mjs:400-545`
 - Modify: `tests/ChurchSubtitle.Core.Tests/WebUiAssetTests.cs:8-82`
 
-- [ ] **Step 1: Replace two-row expectations with one normalized caption string**
+- [x] **Step 1: Replace two-row expectations with one normalized caption string**
 
 Update controller behavior tests to assert `harness.ui.caption`, including:
 
@@ -35,7 +35,7 @@ assert.equal(harness.ui.caption, "축복합니다. 사랑하는 성도 여러분
 
 Add 65 short finals and assert the UI buffer contains lines 2 through 65 but not line 1, proving the 64-fragment memory bound without changing API delivery.
 
-- [ ] **Step 2: Specify a single DOM paragraph and browser scroll math**
+- [x] **Step 2: Specify a single DOM paragraph and browser scroll math**
 
 Replace the markup/CSS assertions with checks for exactly one `id="caption-text"`, no `caption-line-1`/`caption-line-2`, `text-align: left`, `block-size: 2.9em`, and `overflow: hidden`.
 
@@ -56,7 +56,7 @@ Also assert the repeated identical text does not rewrite `textContent`, while sc
 
 Update `WebUiAssetTests` to require `captionText.textContent`, `renderCaption`, and one `caption-text` element, and to reject the removed two row IDs.
 
-- [ ] **Step 3: Run focused tests and confirm RED**
+- [x] **Step 3: Run focused tests and confirm RED**
 
 Run:
 
@@ -75,7 +75,7 @@ Expected: FAIL because the current UI renders two centered block rows, stores on
 - Modify: `src/ChurchSubtitle.Web/wwwroot/index.html:56-59`
 - Modify: `src/ChurchSubtitle.Web/wwwroot/styles.css:234-263`
 
-- [ ] **Step 1: Project normalized fragments into one bounded string**
+- [x] **Step 1: Project normalized fragments into one bounded string**
 
 Add:
 
@@ -112,7 +112,7 @@ _renderCaptionText() {
 
 Call it from partial/final updates, preserving all watermark rules.
 
-- [ ] **Step 2: Replace the two browser rows with one scrolling text element**
+- [x] **Step 2: Replace the two browser rows with one scrolling text element**
 
 Use this markup inside the existing live region:
 
@@ -140,7 +140,7 @@ renderCaption(text = "") {
 }
 ```
 
-- [ ] **Step 3: Make the visual viewport top-left aligned and exactly two lines tall**
+- [x] **Step 3: Make the visual viewport top-left aligned and exactly two lines tall**
 
 Use:
 
@@ -167,7 +167,7 @@ Use:
 }
 ```
 
-- [ ] **Step 4: Run focused and full Node/UI tests and confirm GREEN**
+- [x] **Step 4: Run focused and full Node/UI tests and confirm GREEN**
 
 Run:
 
@@ -186,23 +186,23 @@ Expected: all Node tests and focused asset tests pass.
 - Modify: `docs/api-and-test-ui.md:1-55`
 - Modify: `tests/powershell/RunWeb.Tests.ps1:245-310`
 
-- [ ] **Step 1: Add a failing documentation contract**
+- [x] **Step 1: Add a failing documentation contract**
 
 Require the README section and `docs/api-and-test-ui.md` to contain `왼쪽 위`, `공백 한 칸`, `맨 위 한 줄`, and `개별 CaptionUpdate`, while rejecting the stale claim `두 개의 안정된 DOM 행`.
 
 Construct Korean expected text through `[char]` code points as the existing Windows PowerShell 5 test does, so the script remains encoding-safe.
 
-- [ ] **Step 2: Run the documentation test and confirm RED**
+- [x] **Step 2: Run the documentation test and confirm RED**
 
 Run: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/powershell/RunWeb.Tests.ps1`
 
 Expected: FAIL because the existing documentation still describes two stable DOM rows.
 
-- [ ] **Step 3: Document the new UI policy without changing the API contract**
+- [x] **Step 3: Document the new UI policy without changing the API contract**
 
 State that the test UI joins discrete events using one space, starts at the top-left, and scrolls away only the overflowing top visual line. State separately that the API still emits discrete `CaptionUpdate` events continuously and does not return one ever-growing transcript string.
 
-- [ ] **Step 4: Run all free verification**
+- [x] **Step 4: Run all free verification**
 
 Run:
 
@@ -221,7 +221,7 @@ git diff --check
 
 Expected: Node, .NET, and all PowerShell tests pass; Release build has zero warnings/errors; format and diff checks are clean.
 
-- [ ] **Step 5: Commit, merge, and publish**
+- [x] **Step 5: Commit, merge, and publish**
 
 ```powershell
 git add README.md docs/api-and-test-ui.md docs/superpowers/plans/2026-08-19-inline-scrolling-caption.md src/ChurchSubtitle.Web/wwwroot/app.js src/ChurchSubtitle.Web/wwwroot/index.html src/ChurchSubtitle.Web/wwwroot/styles.css tests/ChurchSubtitle.Core.Tests/WebUiAssetTests.cs tests/powershell/RunWeb.Tests.ps1 tests/web-ui/app.test.mjs

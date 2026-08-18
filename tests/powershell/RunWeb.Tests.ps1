@@ -280,14 +280,64 @@ if\s*\(\s*\k<fileVariable>\.Length\s*!=\s*\k<lengthVariable>\s*\)
         ' ',
         [char]0xC5C6,
         [char]0xC74C)
+    $topLeftText = -join @(
+        [char]0xC67C,
+        [char]0xCABD,
+        ' ',
+        [char]0xC704)
+    $oneSpaceText = -join @(
+        [char]0xACF5,
+        [char]0xBC31,
+        ' ',
+        [char]0xD55C,
+        ' ',
+        [char]0xCE78)
+    $topOneLineText = -join @(
+        [char]0xB9E8,
+        ' ',
+        [char]0xC704,
+        ' ',
+        [char]0xD55C,
+        ' ',
+        [char]0xC904)
+    $discreteCaptionUpdateText = -join @(
+        [char]0xAC1C,
+        [char]0xBCC4,
+        ' CaptionUpdate')
+    $staleTwoRowsText = -join @(
+        [char]0xB450,
+        ' ',
+        [char]0xAC1C,
+        [char]0xC758,
+        ' ',
+        [char]0xC548,
+        [char]0xC815,
+        [char]0xB41C,
+        ' DOM ',
+        [char]0xD589)
     foreach ($requiredBoundaryText in @(
         $productionApiText,
         $localTestUiText,
         'CaptionUpdate',
-        $noTwoLineLimitText
+        $noTwoLineLimitText,
+        $topLeftText,
+        $oneSpaceText,
+        $topOneLineText,
+        $discreteCaptionUpdateText
     )) {
         Assert-True ($apiAndTestUiSource.Contains($requiredBoundaryText)) `
             "The API-versus-test-UI document is missing required boundary text: $requiredBoundaryText"
+    }
+    Assert-True (-not $apiAndTestUiSource.Contains($staleTwoRowsText)) `
+        'The API-versus-test-UI document still describes two stable DOM rows.'
+    foreach ($requiredFlowText in @(
+        $topLeftText,
+        $oneSpaceText,
+        $topOneLineText,
+        $discreteCaptionUpdateText
+    )) {
+        Assert-True ($webUiReadmeSection.Contains($requiredFlowText)) `
+            "The README web UI section is missing inline-flow text: $requiredFlowText"
     }
     Assert-True (
         $readmeSource.Contains('data\poc-source-full\service-full-24k-mono-s16le.pcm')) `

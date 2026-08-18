@@ -12,6 +12,11 @@ const PLAYER_TIMEOUT_MS = 10000;
 const PLAYBACK_WAIT_TIMEOUT_MS = 8000;
 const PLAYBACK_POLL_MS = 100;
 const MAX_PLAYBACK_DRIFT_SECONDS = 0.75;
+const MAX_UI_FINAL_FRAGMENTS = 64;
+
+function normalizeCaptionFragment(text) {
+  return text.trim().replace(/\s+/g, " ");
+}
 
 export function pcmStartByteForVideoTime(
   videoSeconds,
@@ -497,7 +502,7 @@ export class CaptionSessionController {
       text: update.text
     });
     this._activePartialLineId = update.lineId;
-    this._renderCaptionLines();
+    this._renderCaptionText();
   }
 
   _upsertFinal(update) {
@@ -517,12 +522,12 @@ export class CaptionSessionController {
         text: update.text
       });
     }
-    this._recentFinals = this._recentFinals.slice(-2);
+    this._recentFinals = this._recentFinals.slice(-MAX_UI_FINAL_FRAGMENTS);
     this._partialCaptions.delete(update.lineId);
     if (this._activePartialLineId === update.lineId) {
       this._activePartialLineId = Array.from(this._partialCaptions.keys()).at(-1) ?? null;
     }
-    this._renderCaptionLines();
+    this._renderCaptionText();
   }
 
   _canApplyLineUpdate(update) {
@@ -539,17 +544,19 @@ export class CaptionSessionController {
     return watermark.state === "partial" && update.state === "final";
   }
 
-  _renderCaptionLines() {
+  _renderCaptionText() {
     const partial = this._activePartialLineId
-      ? this._partialCaptions.get(this._activePartialLineId)?.text.trim()
+      ? normalizeCaptionFragment(
+        this._partialCaptions.get(this._activePartialLineId)?.text ?? ""
+      )
       : "";
-    const finals = this._recentFinals
-      .map(item => item.text.trim())
+    const fragments = this._recentFinals
+      .map(item => normalizeCaptionFragment(item.text))
       .filter(Boolean);
-    const lines = partial
-      ? [finals.at(-1) ?? "", partial]
-      : [finals.at(-2) ?? "", finals.at(-1) ?? ""];
-    this._ui.renderLines(lines);
+    if (partial) {
+      fragments.push(partial);
+    }
+    this._ui.renderCaption(fragments.join(" "));
   }
 
   _resetCaptions() {
@@ -713,8 +720,7 @@ function bootstrapBrowser() {
     statusBadge: document.getElementById("status-badge"),
     statusText: document.getElementById("status-text"),
     liveIndicator: document.getElementById("live-indicator"),
-    captionLine1: document.getElementById("caption-line-1"),
-    captionLine2: document.getElementById("caption-line-2")
+    captionText: document.getElementById("caption-text")
   };
   const ui = createBrowserUi(elements);
   ui.setPlayerAvailable(false);
@@ -812,16 +818,17 @@ export function createBrowserUi(elements) {
       }
     },
     resetCaptions() {
-      elements.captionLine1.textContent = "";
-      elements.captionLine2.textContent = "";
+      elements.captionText.textContent = "";
+      elements.captionText.scrollTop = 0;
     },
-    renderLines([first = "", second = ""]) {
-      if (elements.captionLine1.textContent !== first) {
-        elements.captionLine1.textContent = first;
+    renderCaption(text = "") {
+      if (elements.captionText.textContent !== text) {
+        elements.captionText.textContent = text;
       }
-      if (elements.captionLine2.textContent !== second) {
-        elements.captionLine2.textContent = second;
-      }
+      elements.captionText.scrollTop = Math.max(
+        0,
+        elements.captionText.scrollHeight - elements.captionText.clientHeight
+      );
     }
   };
 }

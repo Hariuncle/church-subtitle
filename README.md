@@ -103,7 +103,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-web.ps1
 
 콘솔에 표시되는 `http://127.0.0.1:5287`을 browser에서 엽니다. YouTube 플레이어를 원하는 위치로 옮긴 뒤 `시작`을 누르면 그 현재 재생 위치를 100ms PCM 프레임 경계로 내림 정렬하고, 대응하는 바이트부터 파일 끝까지 HTTP Range로 읽어 실시간 속도로 보냅니다. 시작 버튼을 누르는 순간부터 실제 OpenAI API 사용료가 발생합니다. browser가 YouTube iframe의 소리를 캡처하는 구조는 아니며, 준비된 전체 PCM을 영상 시각에 매핑해 별도로 전송합니다.
 
-세션은 화면의 `중지`를 누르거나 영상이 끝날 때까지 계속됩니다. 테스트 UI는 줄바꿈 결과를 포함해 화면에 보이는 최신 텍스트를 최대 `2줄` 높이로 잘라 표시하지만, 이는 UI의 rolling projection일 뿐입니다. WebSocket API는 화면 줄 수와 무관하게 세션 동안 `partial`/`final` 이벤트를 계속 내보내므로 운영 클라이언트는 필요한 누적·표시 정책을 별도로 적용할 수 있습니다.
+세션은 화면의 `중지`를 누르거나 영상이 끝날 때까지 계속됩니다. 테스트 UI는 `partial`/`final` 조각을 공백 한 칸으로 연결한 한 문단을 왼쪽 위부터 표시합니다. 자연스럽게 세 번째 줄이 생기면 맨 위 한 줄만 밀어내고 아래 `2줄`을 유지하는 rolling projection입니다. WebSocket API는 화면 줄 수와 무관하게 세션 동안 개별 CaptionUpdate 이벤트를 계속 내보내므로 운영 클라이언트는 필요한 누적·표시 정책을 별도로 적용할 수 있습니다.
 
 운영 연동용 API와 지금 만든 확인용 화면의 책임은 [운영 API와 테스트 UI 구분](docs/api-and-test-ui.md)에 별도로 정리했습니다.
 

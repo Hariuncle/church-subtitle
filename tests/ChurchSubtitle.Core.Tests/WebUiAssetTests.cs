@@ -16,13 +16,14 @@ public sealed class WebUiAssetTests
         Assert.Contains("id=\"start-button\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"stop-button\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"status-badge\"", html, StringComparison.Ordinal);
-        Assert.Contains("id=\"caption-line-1\"", html, StringComparison.Ordinal);
-        Assert.Contains("id=\"caption-line-2\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"caption-text\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-live=\"polite\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-atomic=\"false\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"live-indicator\"", html, StringComparison.Ordinal);
 
-        Assert.Equal(2, CountOccurrences(html, "id=\"caption-line-"));
+        Assert.Equal(1, CountOccurrences(html, "id=\"caption-text\""));
+        Assert.DoesNotContain("id=\"caption-line-1\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("id=\"caption-line-2\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("id=\"duration\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("id=\"current-caption\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("id=\"caption-history\"", html, StringComparison.Ordinal);
@@ -68,9 +69,9 @@ public sealed class WebUiAssetTests
     {
         var script = ReadAsset("app.js");
 
-        Assert.Contains("captionLine1.textContent", script, StringComparison.Ordinal);
-        Assert.Contains("captionLine2.textContent", script, StringComparison.Ordinal);
-        Assert.Contains("this._recentFinals = this._recentFinals.slice(-2)", script, StringComparison.Ordinal);
+        Assert.Contains("captionText.textContent", script, StringComparison.Ordinal);
+        Assert.Contains("renderCaption", script, StringComparison.Ordinal);
+        Assert.Contains("MAX_UI_FINAL_FRAGMENTS", script, StringComparison.Ordinal);
         Assert.Contains("type=\"module\"", ReadAsset("index.html"), StringComparison.Ordinal);
         Assert.Contains("textContent", script, StringComparison.Ordinal);
         Assert.DoesNotContain("innerHTML", script, StringComparison.Ordinal);

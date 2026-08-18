@@ -406,23 +406,45 @@ test("backpressure wait is bounded and aborts without queueing audio", async () 
   assert.equal(harness.ui.lastStatus[1], "error");
 });
 
-test("partial occupies the lower line while the latest final stays above it", async () => {
+test("final and partial fragments form one space-joined caption flow", async () => {
   const harness = await createConnectedHarness();
 
   harness.socket.message(update("final", "line-a", 1, "첫 문장"));
   harness.socket.message(update("partial", "line-b", 1, "둘째 문장 초안"));
 
-  assert.deepEqual(harness.ui.lines, ["첫 문장", "둘째 문장 초안"]);
+  assert.equal(harness.ui.caption, "첫 문장 둘째 문장 초안");
+  assert.equal(harness.ui.caption.includes("\n"), false);
 });
 
-test("three finals retain only the newest two in chronological order", async () => {
+test("final fragments remain a single continuous caption flow", async () => {
   const harness = await createConnectedHarness();
 
   harness.socket.message(update("final", "line-a", 1, "첫 문장"));
   harness.socket.message(update("final", "line-b", 1, "둘째 문장"));
   harness.socket.message(update("final", "line-c", 1, "셋째 문장"));
 
-  assert.deepEqual(harness.ui.lines, ["둘째 문장", "셋째 문장"]);
+  assert.equal(harness.ui.caption, "첫 문장 둘째 문장 셋째 문장");
+});
+
+test("caption fragments normalize surrounding and repeated whitespace to one space", async () => {
+  const harness = await createConnectedHarness();
+
+  harness.socket.message(update("final", "line-a", 1, "  축복합니다.  "));
+  harness.socket.message(update("partial", "line-b", 1, " 사랑하는   성도\n여러분 "));
+
+  assert.equal(harness.ui.caption, "축복합니다. 사랑하는 성도 여러분");
+});
+
+test("browser caption projection retains a bounded 64 final fragments", async () => {
+  const harness = await createConnectedHarness();
+
+  for (let index = 1; index <= 65; index += 1) {
+    harness.socket.message(update("final", `line-${index}`, 1, `문장${index}`));
+  }
+
+  assert.equal(harness.ui.caption.startsWith("문장2 "), true);
+  assert.equal(harness.ui.caption.endsWith(" 문장65"), true);
+  assert.equal(harness.ui.caption.includes("문장1 "), false);
 });
 
 test("a revised final is upserted by lineId and moved to newest", async () => {
@@ -433,7 +455,7 @@ test("a revised final is upserted by lineId and moved to newest", async () => {
   harness.socket.message(update("final", "line-a", 1, "오래된 확정"));
   harness.socket.message(update("final", "line-a", 2, "수정된 첫 문장"));
 
-  assert.deepEqual(harness.ui.lines, ["둘째 문장", "수정된 첫 문장"]);
+  assert.equal(harness.ui.caption, "둘째 문장 수정된 첫 문장");
 });
 
 test("a delayed partial cannot resurrect a finalized line", async () => {
@@ -444,7 +466,7 @@ test("a delayed partial cannot resurrect a finalized line", async () => {
   harness.socket.message(update("partial", "line-a", 3, "같은 revision 초안"));
   harness.socket.message(update("partial", "line-a", 4, "높은 revision 초안"));
 
-  assert.deepEqual(harness.ui.lines, ["", "확정 문장"]);
+  assert.equal(harness.ui.caption, "확정 문장");
 });
 
 test("higher-revision final corrections remain accepted for a finalized line", async () => {
@@ -453,7 +475,7 @@ test("higher-revision final corrections remain accepted for a finalized line", a
   harness.socket.message(update("final", "line-a", 3, "확정 문장"));
   harness.socket.message(update("final", "line-a", 4, "수정 확정 문장"));
 
-  assert.deepEqual(harness.ui.lines, ["", "수정 확정 문장"]);
+  assert.equal(harness.ui.caption, "수정 확정 문장");
 });
 
 test("blank finals finalize their lines without consuming visible final slots", async () => {
@@ -463,9 +485,9 @@ test("blank finals finalize their lines without consuming visible final slots", 
   harness.socket.message(update("final", "line-b", 1, "   \n  "));
   harness.socket.message(update("final", "line-c", 1, "셋째 문장"));
 
-  assert.deepEqual(harness.ui.lines, ["첫 문장", "셋째 문장"]);
+  assert.equal(harness.ui.caption, "첫 문장 셋째 문장");
   harness.socket.message(update("partial", "line-b", 2, "되살아난 빈 줄"));
-  assert.deepEqual(harness.ui.lines, ["첫 문장", "셋째 문장"]);
+  assert.equal(harness.ui.caption, "첫 문장 셋째 문장");
 });
 
 test("an authoritative blank final removes an earlier visible revision", async () => {
@@ -475,9 +497,9 @@ test("an authoritative blank final removes an earlier visible revision", async (
   harness.socket.message(update("final", "line-b", 1, "남는 문장"));
   harness.socket.message(update("final", "line-a", 2, "\t "));
 
-  assert.deepEqual(harness.ui.lines, ["", "남는 문장"]);
+  assert.equal(harness.ui.caption, "남는 문장");
   harness.socket.message(update("partial", "line-a", 3, "되살아난 문장"));
-  assert.deepEqual(harness.ui.lines, ["", "남는 문장"]);
+  assert.equal(harness.ui.caption, "남는 문장");
 });
 
 test("an older final cannot delete a newer partial", async () => {
@@ -486,57 +508,56 @@ test("an older final cannot delete a newer partial", async () => {
   harness.socket.message(update("partial", "line-a", 4, "최신 초안"));
   harness.socket.message(update("final", "line-a", 3, "뒤늦은 확정"));
 
-  assert.deepEqual(harness.ui.lines, ["", "최신 초안"]);
+  assert.equal(harness.ui.caption, "최신 초안");
 });
 
-test("starting a session resets both caption rows", async () => {
+test("starting a session resets the continuous caption flow", async () => {
   const harness = createHarness({ fetchDeferred: true });
-  harness.ui.lines = ["이전 첫 줄", "이전 둘째 줄"];
+  harness.ui.caption = "이전 첫 줄 이전 둘째 줄";
 
   const started = harness.controller.start({ delay: "low" });
 
-  assert.deepEqual(harness.ui.lines, ["", ""]);
+  assert.equal(harness.ui.caption, "");
   harness.controller.stop();
   await started;
 });
 
-test("caption markup and styles expose exactly two visible broadcast lines", () => {
+test("caption markup and styles expose one top-left two-line viewport", () => {
   assert.match(htmlSource, /id="caption-lines"[^>]*aria-live="polite"[^>]*aria-atomic="false"/);
-  assert.match(htmlSource, /id="caption-line-1"[^>]*aria-label="자막 첫째 줄"/);
-  assert.match(htmlSource, /id="caption-line-2"[^>]*aria-label="자막 둘째 줄"/);
-  assert.equal((htmlSource.match(/id="caption-line-/g) ?? []).length, 2);
+  assert.match(htmlSource, /id="caption-text"[^>]*aria-label="실시간 자막"/);
+  assert.equal((htmlSource.match(/id="caption-text"/g) ?? []).length, 1);
+  assert.doesNotMatch(htmlSource, /id="caption-line-[12]"/);
   assert.doesNotMatch(htmlSource, /caption-history/);
   assert.doesNotMatch(htmlSource, /current-caption/);
   assert.doesNotMatch(htmlSource, /id="duration"/);
   assert.doesNotMatch(cssSource, /\.caption-history/);
-  assert.match(cssSource, /\.caption-lines\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*justify-content:\s*flex-end;[^}]*block-size:\s*2\.9em;[^}]*overflow:\s*hidden;/s);
   assert.match(cssSource, /\.caption-lines\s*\{[^}]*font-size:\s*clamp\([^}]*line-height:\s*1\.45;/s);
-  assert.match(cssSource, /\.caption-line\s*\{[^}]*flex:\s*0 0 auto;[^}]*font:\s*inherit;/s);
-  assert.match(cssSource, /\.caption-line\s*\{[^}]*word-break:\s*break-word;[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*anywhere;/s);
+  assert.match(cssSource, /\.caption-text\s*\{[^}]*block-size:\s*2\.9em;[^}]*overflow:\s*hidden;[^}]*text-align:\s*left;/s);
+  assert.match(cssSource, /\.caption-text\s*\{[^}]*word-break:\s*break-word;[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*anywhere;/s);
 });
 
-test("browser caption rendering mutates stable rows with textContent only", () => {
+test("browser caption rendering mutates one continuous text node only", () => {
   assert.equal(appSource.includes("innerHTML"), false);
   assert.equal(appSource.includes("replaceChildren"), false);
   assert.equal(appSource.includes('document.createElement("li")'), false);
-  assert.match(appSource, /renderLines\(\[first = "", second = ""\]\)/);
-  assert.match(appSource, /captionLine1\.textContent = first/);
-  assert.match(appSource, /captionLine2\.textContent = second/);
+  assert.match(appSource, /renderCaption\(text = ""\)/);
+  assert.match(appSource, /captionText\.textContent = text/);
 });
 
-test("browser caption rendering only writes rows whose text changed", () => {
-  const captionLine1 = new CountingTextElement();
-  const captionLine2 = new CountingTextElement();
-  const ui = createBrowserUi({ captionLine1, captionLine2 });
+test("browser caption rendering scrolls only the overflowing top visual line", () => {
+  const captionText = new CountingTextElement({ clientHeight: 100, scrollHeight: 100 });
+  const ui = createBrowserUi({ captionText });
 
-  ui.renderLines(["확정 문장", "초안 하나"]);
-  ui.renderLines(["확정 문장", "초안 둘"]);
-  ui.renderLines(["확정 문장", "초안 둘"]);
+  ui.renderCaption("축복합니다. 사랑하는 성도 여러분");
+  assert.equal(captionText.scrollTop, 0);
 
-  assert.equal(captionLine1.textContent, "확정 문장");
-  assert.equal(captionLine2.textContent, "초안 둘");
-  assert.equal(captionLine1.setCalls, 1);
-  assert.equal(captionLine2.setCalls, 2);
+  captionText.scrollHeight = 150;
+  ui.renderCaption("축복합니다. 사랑하는 성도 여러분 다음 문장");
+  ui.renderCaption("축복합니다. 사랑하는 성도 여러분 다음 문장");
+
+  assert.equal(captionText.textContent, "축복합니다. 사랑하는 성도 여러분 다음 문장");
+  assert.equal(captionText.scrollTop, 50);
+  assert.equal(captionText.setCalls, 2);
 });
 
 test("privacy notice discloses OpenAI transcription and local-server-only API key storage", () => {
@@ -689,7 +710,7 @@ test("normal server completion closes the run and restores controls", async () =
 
   assert.equal(harness.ui.running, false);
   assert.deepEqual(harness.ui.lastStatus, ["처리 완료", "complete"]);
-  assert.deepEqual(harness.ui.lines, ["남는 첫 문장", "남는 둘째 문장"]);
+  assert.equal(harness.ui.caption, "남는 첫 문장 남는 둘째 문장");
   assert.equal(JSON.stringify(harness.ui).includes("raw completed text"), false);
 });
 
@@ -933,7 +954,7 @@ class FakeUi {
   constructor() {
     this.running = false;
     this.playerAvailable = true;
-    this.lines = ["", ""];
+    this.caption = "";
     this.statuses = [];
   }
 
@@ -941,18 +962,21 @@ class FakeUi {
   setPlayerAvailable(available) { this.playerAvailable = available; }
   setStatus(text, state) { this.statuses.push([text, state]); }
   resetCaptions() {
-    this.lines = ["", ""];
+    this.caption = "";
   }
-  renderLines(lines) {
-    this.lines = [...lines];
+  renderCaption(text) {
+    this.caption = text;
   }
   get lastStatus() { return this.statuses.at(-1); }
 }
 
 class CountingTextElement {
-  constructor() {
+  constructor({ clientHeight = 0, scrollHeight = 0 } = {}) {
     this.value = "";
     this.setCalls = 0;
+    this.clientHeight = clientHeight;
+    this.scrollHeight = scrollHeight;
+    this.scrollTop = 0;
   }
 
   get textContent() { return this.value; }
