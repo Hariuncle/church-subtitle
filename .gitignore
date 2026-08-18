@@ -3,6 +3,7 @@
 .vs/
 .idea/
 .vscode/
+.worktrees/
 
 data/
 runs/
