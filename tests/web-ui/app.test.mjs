@@ -500,16 +500,18 @@ test("starting a session resets both caption rows", async () => {
   await started;
 });
 
-test("caption markup and styles expose exactly two stable broadcast rows", () => {
+test("caption markup and styles expose exactly two visible broadcast lines", () => {
   assert.match(htmlSource, /id="caption-lines"[^>]*aria-live="polite"[^>]*aria-atomic="false"/);
   assert.match(htmlSource, /id="caption-line-1"[^>]*aria-label="자막 첫째 줄"/);
   assert.match(htmlSource, /id="caption-line-2"[^>]*aria-label="자막 둘째 줄"/);
-  assert.equal(htmlSource.includes('id="current-caption"'), false);
-  assert.equal(htmlSource.includes('id="caption-history"'), false);
-  assert.equal(htmlSource.includes('id="duration"'), false);
-  assert.equal(cssSource.includes(".caption-history"), false);
-  assert.match(cssSource, /\.caption-lines\s*\{[^}]*min-height:/s);
-  assert.match(cssSource, /\.caption-line\s*\{[^}]*font-size:\s*clamp\(/s);
+  assert.equal((htmlSource.match(/id="caption-line-/g) ?? []).length, 2);
+  assert.doesNotMatch(htmlSource, /caption-history/);
+  assert.doesNotMatch(htmlSource, /current-caption/);
+  assert.doesNotMatch(htmlSource, /id="duration"/);
+  assert.doesNotMatch(cssSource, /\.caption-history/);
+  assert.match(cssSource, /\.caption-lines\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*justify-content:\s*flex-end;[^}]*block-size:\s*2\.9em;[^}]*overflow:\s*hidden;/s);
+  assert.match(cssSource, /\.caption-lines\s*\{[^}]*font-size:\s*clamp\([^}]*line-height:\s*1\.45;/s);
+  assert.match(cssSource, /\.caption-line\s*\{[^}]*flex:\s*0 0 auto;[^}]*font:\s*inherit;/s);
   assert.match(cssSource, /\.caption-line\s*\{[^}]*word-break:\s*break-word;[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*anywhere;/s);
 });
 

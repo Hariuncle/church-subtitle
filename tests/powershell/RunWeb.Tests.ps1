@@ -5,6 +5,7 @@ $sourceLauncher = Join-Path $repositoryRoot 'scripts\run-web.ps1'
 $sourceLoader = Join-Path $repositoryRoot 'scripts\import-local-env.ps1'
 $program = Join-Path $repositoryRoot 'src\ChurchSubtitle.Web\Program.cs'
 $readme = Join-Path $repositoryRoot 'README.md'
+$apiAndTestUiDocument = Join-Path $repositoryRoot 'docs\api-and-test-ui.md'
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ([Guid]::NewGuid())
 $fakeRepository = Join-Path $temporaryDirectory 'fake-repository'
 $fakeScripts = Join-Path $fakeRepository 'scripts'
@@ -252,6 +253,42 @@ if\s*\(\s*\k<fileVariable>\.Length\s*!=\s*\k<lengthVariable>\s*\)
         'The README does not explain that Start uses the current playback position.'
     Assert-True ($webUiReadmeSection.Contains('rolling projection')) `
         'The README does not explain the two-line rolling caption projection.'
+    Assert-True ($webUiReadmeSection.Contains('docs/api-and-test-ui.md')) `
+        'The README does not link the API-versus-test-UI contract document.'
+
+    Assert-True (Test-Path -LiteralPath $apiAndTestUiDocument) `
+        'The API-versus-test-UI contract document is missing.'
+    $apiAndTestUiSource = Get-Content -LiteralPath $apiAndTestUiDocument -Raw -Encoding utf8
+    $productionApiText = -join @(
+        [char]0xC6B4,
+        [char]0xC601,
+        ' WebSocket API')
+    $localTestUiText = -join @(
+        [char]0xB85C,
+        [char]0xCEEC,
+        ' ',
+        [char]0xD14C,
+        [char]0xC2A4,
+        [char]0xD2B8,
+        ' UI')
+    $noTwoLineLimitText = -join @(
+        '2',
+        [char]0xC904,
+        ' ',
+        [char]0xC81C,
+        [char]0xD55C,
+        ' ',
+        [char]0xC5C6,
+        [char]0xC74C)
+    foreach ($requiredBoundaryText in @(
+        $productionApiText,
+        $localTestUiText,
+        'CaptionUpdate',
+        $noTwoLineLimitText
+    )) {
+        Assert-True ($apiAndTestUiSource.Contains($requiredBoundaryText)) `
+            "The API-versus-test-UI document is missing required boundary text: $requiredBoundaryText"
+    }
     Assert-True (
         $readmeSource.Contains('data\poc-source-full\service-full-24k-mono-s16le.pcm')) `
         'The README does not name the canonical full PCM path.'

@@ -232,21 +232,26 @@ select:focus-visible {
 .live-mark[data-state="connecting"] { color: var(--warning); }
 
 .caption-lines {
-  display: grid;
-  align-content: center;
-  min-height: 7.2em;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  block-size: 2.9em;
   margin: clamp(24px, 4vw, 48px) auto 0;
-}
-
-.caption-line {
-  min-height: 1.45em;
-  margin: 0;
-  color: #fff;
+  overflow: hidden;
   font-size: clamp(1.55rem, 4vw, 3.25rem);
   font-weight: 800;
   line-height: 1.45;
   letter-spacing: -0.045em;
   text-align: center;
+}
+
+.caption-line {
+  flex: 0 0 auto;
+  margin: 0;
+  color: #fff;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
   word-break: break-word;
   word-break: keep-all;
   overflow-wrap: anywhere;
