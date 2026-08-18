@@ -95,6 +95,36 @@ public sealed class WebUiAssetTests
         Assert.Contains("overflow-wrap", styles, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Styles_KeepBothCurrentAndCachedMarkupInsideTwoVisualLines()
+    {
+        var styles = ReadAsset("styles.css");
+
+        Assert.Matches(
+            @"(?s)\.caption-lines\s*\{[^}]*block-size:\s*2\.9em;[^}]*overflow:\s*hidden;",
+            styles);
+        Assert.Matches(
+            @"(?s)\.caption-line\s*\{[^}]*display:\s*inline;[^}]*margin:\s*0;",
+            styles);
+        Assert.Contains(".caption-line + .caption-line::before", styles, StringComparison.Ordinal);
+        Assert.Contains("content: \" \";", styles, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Program_DisablesBrowserCachingForLocalStaticAssets()
+    {
+        var program = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "ChurchSubtitle.Web",
+            "Program.cs"));
+
+        Assert.Contains("UseStaticFiles(new StaticFileOptions", program, StringComparison.Ordinal);
+        Assert.Contains("no-store, no-cache, must-revalidate", program, StringComparison.Ordinal);
+        Assert.Contains("Headers.Pragma = \"no-cache\"", program, StringComparison.Ordinal);
+        Assert.Contains("Headers.Expires = \"0\"", program, StringComparison.Ordinal);
+    }
+
     private static int CountOccurrences(string text, string value) =>
         text.Split(value, StringSplitOptions.None).Length - 1;
 
