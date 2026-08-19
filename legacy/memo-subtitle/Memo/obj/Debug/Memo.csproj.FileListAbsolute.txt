@@ -1,0 +1,60 @@
+D:\Example\C#\Memo\Memo\obj\Debug\ResolveAssemblyReference.cache
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.MainForm.resources
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.Properties.Resources.resources
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.csproj.GenerateResource.Cache
+D:\Example\C#\Memo\Memo\bin\Debug\Memo.exe
+D:\Example\C#\Memo\Memo\bin\Debug\Memo.pdb
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.exe
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.pdb
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.Find.resources
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.Go.resources
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.Change.resources
+D:\Example\C#\Memo\Memo\obj\Debug\Memo.HangHelp.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.exe
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.pdb
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\bin\Debug\Memo.exe
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\bin\Debug\Memo.pdb
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.Change.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.Find.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.MainForm.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.Go.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.HangHelp.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.Properties.Resources.resources
+C:\Documents and Settings\Administrator\바탕 화면\memo-minamjun11\Memo\obj\Debug\Memo.csproj.GenerateResource.Cache
+C:\Users\david\source\repos\캡션보드\Memo\bin\Debug\Memo.exe
+C:\Users\david\source\repos\캡션보드\Memo\bin\Debug\Memo.pdb
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.csprojAssemblyReference.cache
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.Change.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.Find.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.MainForm.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.Go.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.HangHelp.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.Properties.Resources.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.csproj.GenerateResource.cache
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.csproj.CoreCompileInputs.cache
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.exe
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.pdb
+C:\Users\david\source\repos\캡션보드\Memo\bin\Debug\ko-KR\Memo.resources.dll
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\Memo.MainForm.ko-KR.resources
+C:\Users\david\source\repos\캡션보드\Memo\obj\Debug\ko-KR\Memo.resources.dll
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.csproj.AssemblyReference.cache
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.Change.resources
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.Find.resources
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.MainForm.resources
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.Go.resources
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.HangHelp.resources
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.Properties.Resources.resources
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.csproj.GenerateResource.cache
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.exe
+D:\EasyWin32-0_1_Alpha-15-09-02\capturetion\Memo\obj\Debug\Memo.pdb
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.csproj.AssemblyReference.cache
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.Change.resources
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.Find.resources
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.MainForm.resources
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.Go.resources
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.HangHelp.resources
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.Properties.Resources.resources
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.csproj.GenerateResource.cache
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.exe
+C:\Users\admin\Documents\capturetion\Memo\obj\Debug\Memo.pdb
