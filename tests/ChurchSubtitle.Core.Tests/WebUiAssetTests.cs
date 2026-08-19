@@ -13,6 +13,7 @@ public sealed class WebUiAssetTests
         Assert.Contains("id=\"delay\"", html, StringComparison.Ordinal);
         Assert.Contains("<option value=\"low\" selected", html, StringComparison.Ordinal);
         Assert.Contains("<option value=\"medium\"", html, StringComparison.Ordinal);
+        Assert.Contains("<option value=\"high\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"start-button\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"stop-button\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"status-badge\"", html, StringComparison.Ordinal);

@@ -256,7 +256,7 @@ static void PrintUsage()
         ChurchSubtitle OpenAI 실시간 한국어 자막 PoC
 
         전사:
-          ChurchSubtitle.Cli transcribe --pcm <24k-mono-s16le.pcm> --delay <low|medium> --output <directory> [--keywords <file>] [--prompt <text>]
+          ChurchSubtitle.Cli transcribe --pcm <24k-mono-s16le.pcm> --delay <low|medium|high> --output <directory> [--keywords <file>] [--prompt <text>]
 
         평가:
           ChurchSubtitle.Cli evaluate --reference <교정본.txt> --hypothesis <final.txt> --keywords <file> --runtime-metrics <runtime-metrics.json> --output <evaluation.json>

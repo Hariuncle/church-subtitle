@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [uri]$Endpoint = 'ws://127.0.0.1:5287/ws/captions',
-    [ValidateSet('low', 'medium')]
+    [ValidateSet('low', 'medium', 'high')]
     [string]$Delay = 'low',
     [ValidateRange(1, 900)]
     [int]$DurationSeconds = 30,

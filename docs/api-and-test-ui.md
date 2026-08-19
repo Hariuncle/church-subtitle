@@ -17,7 +17,7 @@
 
 클라이언트 전송 순서는 다음과 같다.
 
-1. 연결 직후 UTF-8 텍스트 프레임 `{"type":"start","delay":"low"}`를 보낸다. `delay`는 `low` 또는 `medium`이다.
+1. 연결 직후 UTF-8 텍스트 프레임 `{"type":"start","delay":"low"}`를 보낸다. 현재 애플리케이션이 허용하는 `delay`는 `low`, `medium`, `high`이다.
 2. 헤더 없는 PCM을 binary 프레임으로 계속 보낸다. 권장 단위는 100ms인 4,800바이트다.
 3. 정상 입력 종료 시 UTF-8 텍스트 프레임 `{"type":"end"}`를 보낸다.
 

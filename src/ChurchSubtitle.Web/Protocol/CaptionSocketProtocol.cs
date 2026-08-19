@@ -51,7 +51,7 @@ public static class CaptionSocketProtocol
         }
 
         var delay = delayElement.GetString();
-        return delay is "low" or "medium"
+        return delay is "low" or "medium" or "high"
             ? new StartCaptionSocketCommand(delay)
             : throw InvalidCommand();
     }

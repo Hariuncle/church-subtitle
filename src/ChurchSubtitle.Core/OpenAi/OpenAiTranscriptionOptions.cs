@@ -7,10 +7,10 @@ public sealed record OpenAiTranscriptionOptions
         string Prompt,
         IReadOnlyList<string> Keywords)
     {
-        if (Delay is not ("low" or "medium"))
+        if (Delay is not ("low" or "medium" or "high"))
         {
             throw new ArgumentException(
-                "The PoC supports only 'low' or 'medium' delay.",
+                "The PoC supports only 'low', 'medium', or 'high' delay.",
                 nameof(Delay));
         }
 

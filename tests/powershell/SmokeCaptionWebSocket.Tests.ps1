@@ -302,6 +302,11 @@ try {
     Assert-True ($mediumResult.FrameCount -eq 10) 'A one second run must contain ten frames.'
     Assert-True ($mediumResult.AudioBytes -eq 48000) 'A one second run must contain 48,000 bytes.'
 
+    $highResult = & $smokeClient -DryRun -Delay high -DurationSeconds 1 `
+        -PcmPath $oneSecondPcm -Endpoint 'ws://127.0.0.1:1/custom'
+    Assert-True ($highResult.StartCommand -ceq '{"type":"start","delay":"high"}') `
+        'The high start command is not exact.'
+
     $shortPcm = Join-Path $temporaryDirectory 'short.pcm'
     [System.IO.File]::WriteAllBytes($shortPcm, [byte[]]::new(47998))
     $shortError = $null

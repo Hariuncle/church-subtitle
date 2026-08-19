@@ -7,6 +7,7 @@ public sealed class CaptionSocketProtocolTests
     [Theory]
     [InlineData("low")]
     [InlineData("medium")]
+    [InlineData("high")]
     public void Parses_start_command_with_supported_delay(string delay)
     {
         var command = CaptionSocketProtocol.Parse($$"""
@@ -32,7 +33,7 @@ public sealed class CaptionSocketProtocolTests
     [InlineData("{ \"type\": \"pause\" }")]
     [InlineData("{ \"type\": \"START\", \"delay\": \"low\" }")]
     [InlineData("{ \"type\": \"start\" }")]
-    [InlineData("{ \"type\": \"start\", \"delay\": \"high\" }")]
+    [InlineData("{ \"type\": \"start\", \"delay\": \"xhigh\" }")]
     [InlineData("{ \"type\": \"start\", \"delay\": \"LOW\" }")]
     [InlineData("{ \"type\": \"start\", \"delay\": 1 }")]
     public void Rejects_unknown_or_incomplete_commands(string json)

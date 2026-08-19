@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('low', 'medium')]
+    [ValidateSet('low', 'medium', 'high')]
     [string]$Delay = 'low',
     [string]$PcmPath = 'data\poc-source-15m\service-segment-24k-mono-s16le.pcm',
     [string]$KeywordsPath = 'config\keywords.txt',

@@ -47,9 +47,27 @@ public sealed class OpenAiMessageFactoryTests
             OpenAiMessageFactory.CreateAudioCommit());
     }
 
+    [Fact]
+    public void Session_update_forwards_high_transcription_delay()
+    {
+        var options = new OpenAiTranscriptionOptions("high", "prompt", []);
+
+        using var document = JsonDocument.Parse(
+            OpenAiMessageFactory.CreateSessionUpdate(options));
+        var delay = document.RootElement
+            .GetProperty("session")
+            .GetProperty("audio")
+            .GetProperty("input")
+            .GetProperty("transcription")
+            .GetProperty("delay")
+            .GetString();
+
+        Assert.Equal("high", delay);
+    }
+
     [Theory]
     [InlineData("minimal")]
-    [InlineData("high")]
+    [InlineData("xhigh")]
     [InlineData("")]
     public void Options_reject_delay_values_outside_poc_scope(string delay)
     {

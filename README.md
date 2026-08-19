@@ -7,7 +7,7 @@ Windows 방송실 PC에서 24 kHz mono PCM 오디오를 OpenAI `gpt-live-transcr
 - `ChurchSubtitle.Core`: 자막 이벤트, OpenAI WebSocket 공급자, 재접속, 지연 측정, CER 평가
 - `ChurchSubtitle.Cli`: `transcribe`와 `evaluate` 명령
 - `scripts/prepare-audio.ps1`: 권한이 확인된 YouTube 영상에서 테스트 음원 추출
-- `scripts/run-transcription.ps1`: `low` 또는 `medium` 단일 실행
+- `scripts/run-transcription.ps1`: `low`, `medium` 또는 `high` 단일 실행
 - `scripts/run-bakeoff.ps1`: 같은 음원으로 `low`/`medium` 순차 실행
 - `scripts/evaluate.ps1`: 사람이 교정한 정답 자막과 결과 비교
 
@@ -113,7 +113,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-web.ps1
 
 운영 연동과 테스트 UI 모두 로컬 개발 환경에서 `ws://127.0.0.1:5287/ws/captions`를 사용합니다. HTTPS 앞에 배치한 클라이언트는 같은 경로의 `wss:`를 사용해야 합니다. 입력 오디오는 헤더 없는 `24 kHz / 16-bit / mono PCM (s16le)`입니다.
 
-1. 연결 직후 UTF-8 텍스트 설정을 보냅니다: `{"type":"start","delay":"low"}` (`medium`도 가능)
+1. 연결 직후 UTF-8 텍스트 설정을 보냅니다: `{"type":"start","delay":"low"}` (`medium`, `high`도 가능)
 2. PCM을 binary 프레임으로 보냅니다. 권장 크기는 100ms당 4,800바이트입니다.
 3. 입력이 끝나면 UTF-8 텍스트를 보냅니다: `{"type":"end"}`
 4. 서버는 `CaptionUpdate` JSON을 텍스트 프레임으로 반환합니다. `state`는 `partial`, `final`, `status` 중 하나입니다.
@@ -152,4 +152,4 @@ $dotnet = "$env:LOCALAPPDATA\church-subtitle-tools\dotnet\dotnet.exe"
 & $dotnet build .\ChurchSubtitle.sln --configuration Release
 ```
 
-OpenAI 세션은 공식 문서의 transcription session, 24 kHz PCM, `languages: ["ko"]`, `delay: low|medium`을 사용합니다. 문서상 VAD 지원은 모델에 따라 다르며, 현재 `gpt-live-transcribe` PoC에서는 위 설명처럼 application-level 10초 커밋을 사용합니다: <https://developers.openai.com/api/docs/guides/realtime-transcription>
+OpenAI 세션은 공식 문서의 transcription session, 24 kHz PCM, `languages: ["ko"]`, `delay: low|medium|high`을 사용합니다. 이 PoC의 기본값은 `low`이며, `medium`은 지연과 정확도의 균형, `high`는 더 많은 지연을 허용하고 정확도를 우선할 때 선택합니다. OpenAI 공식 API는 그 밖의 delay 단계도 제공하지만 현재 애플리케이션은 검증 범위를 이 세 값으로 제한합니다. 문서상 VAD 지원은 모델에 따라 다르며, 현재 `gpt-live-transcribe` PoC에서는 위 설명처럼 application-level 10초 커밋을 사용합니다: <https://developers.openai.com/api/docs/guides/realtime-transcription>
