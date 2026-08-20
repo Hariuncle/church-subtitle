@@ -10,6 +10,7 @@ const {
   CaptionSessionController,
   TOTAL_PCM_BYTES,
   createBrowserUi,
+  createCaptionOutputPublisher,
   fetchSelectedPcm,
   pcmStartByteForVideoTime
 } = await import(appModuleUrl);
@@ -560,6 +561,40 @@ test("browser caption rendering scrolls only the overflowing top visual line", (
   assert.equal(captionText.setCalls, 2);
 });
 
+test("browser caption rendering republishes captions to the output channel", () => {
+  const captionText = new CountingTextElement({ clientHeight: 100, scrollHeight: 100 });
+  const channel = new FakeBroadcastChannel();
+  const ui = createBrowserUi({ captionText }, createCaptionOutputPublisher(channel));
+
+  ui.renderCaption("송출되는 자막");
+  ui.resetCaptions();
+
+  assert.deepEqual(channel.posted, [
+    { type: "caption", text: "송출되는 자막" },
+    { type: "caption", text: "" }
+  ]);
+});
+
+test("output publisher replays the last caption to a late hello only", () => {
+  const channel = new FakeBroadcastChannel();
+  const publish = createCaptionOutputPublisher(channel);
+
+  publish("마지막 자막");
+  channel.emit({ type: "hello" });
+  channel.emit({ type: "caption", text: "다른 창의 자막" });
+  channel.emit(null);
+  channel.emit("hello");
+
+  assert.deepEqual(channel.posted, [
+    { type: "caption", text: "마지막 자막" },
+    { type: "caption", text: "마지막 자막" }
+  ]);
+});
+
+test("a missing broadcast channel disables output publishing", () => {
+  assert.equal(createCaptionOutputPublisher(null), null);
+});
+
 test("privacy notice discloses OpenAI transcription and local-server-only API key storage", () => {
   assert.match(htmlSource, /오디오는[^<]*브라우저[^<]*로컬 자막 서버[^<]*OpenAI[^<]*전사/);
   assert.match(htmlSource, /API 키는[^<]*로컬 서버에만/);
@@ -968,6 +1003,29 @@ class FakeUi {
     this.caption = text;
   }
   get lastStatus() { return this.statuses.at(-1); }
+}
+
+class FakeBroadcastChannel {
+  constructor() {
+    this.posted = [];
+    this.listeners = [];
+  }
+
+  addEventListener(type, handler) {
+    if (type === "message") {
+      this.listeners.push(handler);
+    }
+  }
+
+  postMessage(data) {
+    this.posted.push(data);
+  }
+
+  emit(data) {
+    for (const handler of [...this.listeners]) {
+      handler({ data });
+    }
+  }
 }
 
 class CountingTextElement {

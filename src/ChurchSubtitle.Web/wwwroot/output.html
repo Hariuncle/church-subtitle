@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>자막 송출 화면</title>
+  <link rel="stylesheet" href="/output.css">
+  <script src="/output.js" type="module"></script>
+</head>
+<body>
+  <p class="board-hint">제어 화면(/)에서 시작한 자막이 표시됩니다. 화면을 클릭하면 전체 화면으로 전환됩니다.</p>
+  <main class="caption-band" aria-label="방송 자막 밴드">
+    <p id="board-text" class="board-text" aria-live="polite" aria-atomic="false"></p>
+  </main>
+</body>
+</html>

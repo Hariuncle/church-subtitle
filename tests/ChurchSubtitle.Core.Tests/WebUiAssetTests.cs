@@ -112,6 +112,51 @@ public sealed class WebUiAssetTests
     }
 
     [Fact]
+    public void Output_ReproducesLegacyCaptionBoardSpec()
+    {
+        var html = ReadAsset("output.html");
+        var css = ReadAsset("output.css");
+        var script = ReadAsset("output.js");
+
+        Assert.Contains("id=\"board-text\"", html, StringComparison.Ordinal);
+        Assert.Contains("aria-live=\"polite\"", html, StringComparison.Ordinal);
+        Assert.Contains("/output.css", html, StringComparison.Ordinal);
+        Assert.Contains("/output.js", html, StringComparison.Ordinal);
+
+        // 레거시 2021-07-01 빌드 스펙(docs/legacy-memo-analysis.md §6):
+        // 검정 화면, 하단 211/1080 밴드 RGB(71,71,71), 흰색 나눔고딕 ExtraBold 52pt(≈6.42vh)
+        Assert.Contains("background: #000", css, StringComparison.Ordinal);
+        Assert.Contains("height: 19.537vh", css, StringComparison.Ordinal);
+        Assert.Contains("background: rgb(71 71 71)", css, StringComparison.Ordinal);
+        Assert.Contains("\"나눔고딕 ExtraBold\"", css, StringComparison.Ordinal);
+        Assert.Contains("font-size: 6.42vh", css, StringComparison.Ordinal);
+
+        Assert.Contains("caption-output", script, StringComparison.Ordinal);
+        Assert.Contains("BroadcastChannel", script, StringComparison.Ordinal);
+        Assert.Contains("textContent", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("innerHTML", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("/ws/captions", script, StringComparison.Ordinal);
+
+        var browserAssets = script + html + css;
+        Assert.DoesNotContain("OPENAI_API_KEY", browserAssets, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("apiKey", browserAssets, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Index_RelaysCaptionsToTheOutputWindow()
+    {
+        var html = ReadAsset("index.html");
+        Assert.Contains("href=\"/output.html\"", html, StringComparison.Ordinal);
+        Assert.Contains("target=\"_blank\"", html, StringComparison.Ordinal);
+        Assert.Contains("rel=\"noopener\"", html, StringComparison.Ordinal);
+
+        var script = ReadAsset("app.js");
+        Assert.Contains("caption-output", script, StringComparison.Ordinal);
+        Assert.Contains("typeof BroadcastChannel", script, StringComparison.Ordinal);
+        Assert.Contains("createCaptionOutputPublisher", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Program_DisablesBrowserCachingForLocalStaticAssets()
     {
         var program = File.ReadAllText(Path.Combine(

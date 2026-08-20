@@ -1,0 +1,64 @@
+/*
+ * 레거시 자막기(자막기.exe, 2021-07-01 빌드)의 송출 화면 스펙을 뷰포트 비율로 재현한다.
+ * 근거: docs/legacy-memo-analysis.md §3, §6 — 1920×1080 검정 화면, 하단 211px 밴드
+ * RGB(71,71,71), 흰색 나눔고딕 ExtraBold 52pt(96dpi 기준 69.33px), 약 2줄.
+ */
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.board-hint {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  margin: 0;
+  color: #737e8e;
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: 0.8rem;
+}
+
+:root:fullscreen .board-hint {
+  display: none;
+}
+
+:root:fullscreen body {
+  cursor: none;
+}
+
+/* 하단 밴드: 211/1080 = 19.537vh */
+.caption-band {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 19.537vh;
+  overflow: hidden;
+  background: rgb(71 71 71);
+}
+
+/* 글자: 52pt = 69.33px @1080p → 6.42vh, 줄 높이 약 83px → 1.2 */
+.board-text {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: #fff;
+  font-family: "나눔고딕 ExtraBold", "NanumGothic ExtraBold", "Nanum Gothic", "맑은 고딕", "Malgun Gothic", sans-serif;
+  font-size: 6.42vh;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}

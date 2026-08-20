@@ -105,6 +105,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-web.ps1
 
 세션은 화면의 `중지`를 누르거나 영상이 끝날 때까지 계속됩니다. 테스트 UI는 `partial`/`final` 조각을 공백 한 칸으로 연결한 한 문단을 왼쪽 위부터 표시합니다. 자연스럽게 세 번째 줄이 생기면 맨 위 한 줄만 밀어내고 아래 `2줄`을 유지하는 rolling projection입니다. WebSocket API는 화면 줄 수와 무관하게 세션 동안 개별 CaptionUpdate 이벤트를 계속 내보내므로 운영 클라이언트는 필요한 누적·표시 정책을 별도로 적용할 수 있습니다.
 
+### 송출 화면 (레거시 캡션보드 스타일)
+
+`http://127.0.0.1:5287/output.html`은 레거시 자막기(자막기.exe 2021-07-01 빌드)의 송출 스펙을 재현한 표시 전용 창입니다([레거시 분석](docs/legacy-memo-analysis.md) §6). 검정 화면 하단 19.5% 밴드(1080p 기준 211px)를 진회색 RGB(71,71,71)로 칠하고, 흰색 나눔고딕 ExtraBold 52pt 상당(6.42vh) 글자를 같은 2줄 rolling 정책으로 표시합니다. 제어 화면 우측 상단의 `송출 화면 열기`로 같은 브라우저에서 창을 연 뒤 두 번째 모니터로 옮기고 화면을 클릭해 전체 화면으로 두면, 제어 화면이 표시하는 자막 문단이 BroadcastChannel로 중계됩니다. 서버 WebSocket 세션을 추가로 사용하지 않으므로 단일 세션 제한과 충돌하지 않습니다. 나눔고딕 ExtraBold가 설치되어 있지 않으면 맑은 고딕으로 대체됩니다.
+
 운영 연동용 API와 지금 만든 확인용 화면의 책임은 [운영 API와 테스트 UI 구분](docs/api-and-test-ui.md)에 별도로 정리했습니다.
 
 한 번에 하나의 전사 세션만 실행할 수 있습니다. 화면 세션을 끝낸 뒤 서버까지 종료하려면 서버 PowerShell 창에서 `Ctrl+C`를 누릅니다. `OPENAI_API_KEY`는 서버 프로세스에서만 읽으며 HTML, JavaScript, PCM Range 요청, WebSocket 메시지로 전달하거나 로그에 출력하지 않습니다. 서버는 loopback 주소에만 바인딩되므로 이 PoC를 외부 네트워크에 그대로 공개하지 마십시오.

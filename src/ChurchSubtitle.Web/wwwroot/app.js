@@ -1,6 +1,7 @@
 "use strict";
 
 const VIDEO_ID = "YLsWQq04R10";
+const OUTPUT_CHANNEL_NAME = "caption-output";
 export const TOTAL_PCM_BYTES = 70_368_000;
 const PCM_BYTES_PER_SECOND = 48000;
 const AUDIO_FRAME_BYTES = 4800;
@@ -722,7 +723,12 @@ function bootstrapBrowser() {
     liveIndicator: document.getElementById("live-indicator"),
     captionText: document.getElementById("caption-text")
   };
-  const ui = createBrowserUi(elements);
+  const publishCaption = createCaptionOutputPublisher(
+    typeof BroadcastChannel === "undefined"
+      ? null
+      : new BroadcastChannel(OUTPUT_CHANNEL_NAME)
+  );
+  const ui = createBrowserUi(elements, publishCaption);
   ui.setPlayerAvailable(false);
   let player = null;
   let controller = null;
@@ -784,7 +790,26 @@ function bootstrapBrowser() {
   elements.stopButton.addEventListener("click", () => controller.stop());
 }
 
-export function createBrowserUi(elements) {
+export function createCaptionOutputPublisher(channel) {
+  if (!channel) {
+    return null;
+  }
+
+  let lastCaption = "";
+  channel.addEventListener("message", event => {
+    if (event.data !== null
+      && typeof event.data === "object"
+      && event.data.type === "hello") {
+      channel.postMessage({ type: "caption", text: lastCaption });
+    }
+  });
+  return text => {
+    lastCaption = text;
+    channel.postMessage({ type: "caption", text });
+  };
+}
+
+export function createBrowserUi(elements, publishCaption = null) {
   let controlsRunning = false;
   let playerAvailable = false;
   return {
@@ -820,6 +845,7 @@ export function createBrowserUi(elements) {
     resetCaptions() {
       elements.captionText.textContent = "";
       elements.captionText.scrollTop = 0;
+      publishCaption?.("");
     },
     renderCaption(text = "") {
       if (elements.captionText.textContent !== text) {
@@ -829,6 +855,7 @@ export function createBrowserUi(elements) {
         0,
         elements.captionText.scrollHeight - elements.captionText.clientHeight
       );
+      publishCaption?.(text);
     }
   };
 }
