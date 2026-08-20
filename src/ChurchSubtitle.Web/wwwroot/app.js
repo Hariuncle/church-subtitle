@@ -14,6 +14,7 @@ const PLAYBACK_WAIT_TIMEOUT_MS = 8000;
 const PLAYBACK_POLL_MS = 100;
 const MAX_PLAYBACK_DRIFT_SECONDS = 0.75;
 const MAX_UI_FINAL_FRAGMENTS = 64;
+const MAX_EDITABLE_FINALS = 8;
 
 function normalizeCaptionFragment(text) {
   return text.trim().replace(/\s+/g, " ");
@@ -52,7 +53,8 @@ export class CaptionSessionController {
     connectionTimeoutMs = CONNECTION_TIMEOUT_MS,
     playbackWaitTimeoutMs = PLAYBACK_WAIT_TIMEOUT_MS,
     playbackPollMs = PLAYBACK_POLL_MS,
-    maxPlaybackDriftSeconds = MAX_PLAYBACK_DRIFT_SECONDS
+    maxPlaybackDriftSeconds = MAX_PLAYBACK_DRIFT_SECONDS,
+    applyReplacements = null
   }) {
     this._ui = ui;
     this._fetchPcm = fetchPcm;
@@ -73,12 +75,15 @@ export class CaptionSessionController {
     this._playbackWaitTimeoutMs = playbackWaitTimeoutMs;
     this._playbackPollMs = playbackPollMs;
     this._maxPlaybackDriftSeconds = maxPlaybackDriftSeconds;
+    this._applyReplacements = applyReplacements ?? (text => text);
     this._activeRun = null;
     this._generation = 0;
     this._activePartialLineId = null;
     this._partialCaptions = new Map();
     this._recentFinals = [];
     this._lineWatermarks = new Map();
+    this._operatorLocks = new Set();
+    this._manualLineCounter = 0;
   }
 
   async start({ delay }) {
@@ -500,7 +505,7 @@ export class CaptionSessionController {
     this._recentFinals = this._recentFinals.filter(item => item.lineId !== update.lineId);
     this._partialCaptions.set(update.lineId, {
       revision: update.revision,
-      text: update.text
+      text: this._applyReplacements(update.text)
     });
     this._activePartialLineId = update.lineId;
     this._renderCaptionText();
@@ -516,11 +521,12 @@ export class CaptionSessionController {
       state: "final"
     });
     this._recentFinals = this._recentFinals.filter(item => item.lineId !== update.lineId);
-    if (update.text.trim()) {
+    const text = this._applyReplacements(update.text);
+    if (text.trim()) {
       this._recentFinals.push({
         lineId: update.lineId,
         revision: update.revision,
-        text: update.text
+        text
       });
     }
     this._recentFinals = this._recentFinals.slice(-MAX_UI_FINAL_FRAGMENTS);
@@ -531,7 +537,48 @@ export class CaptionSessionController {
     this._renderCaptionText();
   }
 
+  getFinalText(lineId) {
+    return this._recentFinals.find(item => item.lineId === lineId)?.text ?? null;
+  }
+
+  editFinal(lineId, text) {
+    const entry = this._recentFinals.find(item => item.lineId === lineId);
+    if (!entry) {
+      return false;
+    }
+
+    this._operatorLocks.add(lineId);
+    const revision = entry.revision + 1;
+    this._lineWatermarks.set(lineId, { revision, state: "final" });
+    if (text.trim()) {
+      entry.revision = revision;
+      entry.text = text;
+    } else {
+      this._recentFinals = this._recentFinals.filter(item => item.lineId !== lineId);
+    }
+    this._renderCaptionText();
+    return true;
+  }
+
+  insertManualLine(text) {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return false;
+    }
+
+    const lineId = `manual-${++this._manualLineCounter}`;
+    this._operatorLocks.add(lineId);
+    this._lineWatermarks.set(lineId, { revision: 1, state: "final" });
+    this._recentFinals.push({ lineId, revision: 1, text: trimmed });
+    this._recentFinals = this._recentFinals.slice(-MAX_UI_FINAL_FRAGMENTS);
+    this._renderCaptionText();
+    return true;
+  }
+
   _canApplyLineUpdate(update) {
+    if (this._operatorLocks.has(update.lineId)) {
+      return false;
+    }
     const watermark = this._lineWatermarks.get(update.lineId);
     if (!watermark) {
       return true;
@@ -558,6 +605,9 @@ export class CaptionSessionController {
       fragments.push(partial);
     }
     this._ui.renderCaption(fragments.join(" "));
+    this._ui.renderFinalList?.(this._recentFinals
+      .slice(-MAX_EDITABLE_FINALS)
+      .map(item => ({ lineId: item.lineId, text: item.text })));
   }
 
   _resetCaptions() {
@@ -565,7 +615,9 @@ export class CaptionSessionController {
     this._recentFinals = [];
     this._activePartialLineId = null;
     this._lineWatermarks.clear();
+    this._operatorLocks.clear();
     this._ui.resetCaptions();
+    this._ui.renderFinalList?.([]);
   }
 
   _cancelPcmReader(run, handle = run.pcmReaderHandle) {
@@ -721,7 +773,13 @@ function bootstrapBrowser() {
     statusBadge: document.getElementById("status-badge"),
     statusText: document.getElementById("status-text"),
     liveIndicator: document.getElementById("live-indicator"),
-    captionText: document.getElementById("caption-text")
+    captionText: document.getElementById("caption-text"),
+    finalList: document.getElementById("final-list"),
+    editForm: document.getElementById("edit-form"),
+    editInput: document.getElementById("edit-input"),
+    editCancel: document.getElementById("edit-cancel"),
+    manualForm: document.getElementById("manual-form"),
+    manualInput: document.getElementById("manual-input")
   };
   const publishCaption = createCaptionOutputPublisher(
     typeof BroadcastChannel === "undefined"
@@ -740,8 +798,14 @@ function bootstrapBrowser() {
   });
   playerReady.catch(() => {});
 
+  let applyReplacements = text => text;
+  void loadReplacementApplier().then(applier => {
+    applyReplacements = applier;
+  });
+
   controller = new CaptionSessionController({
     ui,
+    applyReplacements: text => applyReplacements(text),
     fetchPcm: fetchSelectedPcm,
     getPlayer: signal => waitWithTimeout(playerReady, PLAYER_TIMEOUT_MS, signal),
     primePlayback: () => {
@@ -784,10 +848,149 @@ function bootstrapBrowser() {
     }
   );
 
+  const desk = createOperatorDesk({
+    elements,
+    controller,
+    createElement: tag => document.createElement(tag)
+  });
+  ui.renderFinalList = finals => desk.renderFinals(finals);
+
   elements.startButton.addEventListener("click", () => {
     void controller.start({ delay: elements.delay.value });
   });
   elements.stopButton.addEventListener("click", () => controller.stop());
+  elements.editForm.addEventListener("submit", event => {
+    event.preventDefault();
+    desk.submitEdit();
+  });
+  elements.editInput.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      desk.closeEditor();
+    }
+  });
+  elements.editCancel.addEventListener("click", () => desk.closeEditor());
+  elements.manualForm.addEventListener("submit", event => {
+    event.preventDefault();
+    desk.submitManual();
+  });
+}
+
+async function loadReplacementApplier() {
+  try {
+    const response = await fetch("/config/replacements", { cache: "no-store" });
+    if (!response.ok) {
+      return text => text;
+    }
+    return createReplacementApplier(parseReplacementRules(await response.text()));
+  } catch {
+    return text => text;
+  }
+}
+
+export function parseReplacementRules(text) {
+  const rules = [];
+  for (const line of String(text ?? "").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+    const separatorIndex = trimmed.indexOf("=>");
+    if (separatorIndex <= 0) {
+      continue;
+    }
+    const from = trimmed.slice(0, separatorIndex).trim();
+    const to = trimmed.slice(separatorIndex + 2).trim();
+    if (!from || from === to) {
+      continue;
+    }
+    rules.push({ from, to });
+  }
+  rules.sort((first, second) => second.from.length - first.from.length);
+  return rules;
+}
+
+export function createReplacementApplier(rules) {
+  if (!rules?.length) {
+    return text => text;
+  }
+
+  // Single pass, longest match first; replaced output is never re-matched.
+  return text => {
+    let result = "";
+    let index = 0;
+    while (index < text.length) {
+      const rule = rules.find(candidate => text.startsWith(candidate.from, index));
+      if (rule) {
+        result += rule.to;
+        index += rule.from.length;
+      } else {
+        result += text[index];
+        index += 1;
+      }
+    }
+    return result;
+  };
+}
+
+export function createOperatorDesk({ elements, controller, createElement }) {
+  const lineButtons = new Map();
+  let editingLineId = null;
+
+  function renderFinals(finals) {
+    const visible = new Set();
+    for (const item of finals) {
+      visible.add(item.lineId);
+      let button = lineButtons.get(item.lineId);
+      if (!button) {
+        button = createElement("button");
+        button.type = "button";
+        button.className = "final-line";
+        button.addEventListener("click", () => openEditor(item.lineId));
+        lineButtons.set(item.lineId, button);
+      }
+      if (button.textContent !== item.text) {
+        button.textContent = item.text;
+      }
+      elements.finalList.append(button);
+    }
+    for (const [lineId, button] of lineButtons) {
+      if (!visible.has(lineId)) {
+        button.remove();
+        lineButtons.delete(lineId);
+      }
+    }
+  }
+
+  function openEditor(lineId) {
+    const text = controller.getFinalText(lineId);
+    if (text === null) {
+      return;
+    }
+    editingLineId = lineId;
+    elements.editForm.hidden = false;
+    elements.editInput.value = text;
+    elements.editInput.focus?.();
+  }
+
+  function closeEditor() {
+    editingLineId = null;
+    elements.editForm.hidden = true;
+  }
+
+  function submitEdit() {
+    if (editingLineId !== null) {
+      controller.editFinal(editingLineId, elements.editInput.value);
+    }
+    closeEditor();
+  }
+
+  function submitManual() {
+    if (controller.insertManualLine(elements.manualInput.value)) {
+      elements.manualInput.value = "";
+    }
+  }
+
+  return { renderFinals, openEditor, closeEditor, submitEdit, submitManual };
 }
 
 export function createCaptionOutputPublisher(channel) {

@@ -112,6 +112,40 @@ public sealed class WebUiAssetTests
     }
 
     [Fact]
+    public void Index_ProvidesOperatorEditingAndManualIntervention()
+    {
+        var html = ReadAsset("index.html");
+        Assert.Contains("id=\"final-list\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"edit-form\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"edit-input\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"edit-cancel\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"manual-form\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"manual-input\"", html, StringComparison.Ordinal);
+
+        var script = ReadAsset("app.js");
+        Assert.Contains("editFinal(", script, StringComparison.Ordinal);
+        Assert.Contains("insertManualLine(", script, StringComparison.Ordinal);
+        Assert.Contains("_operatorLocks", script, StringComparison.Ordinal);
+        Assert.Contains("parseReplacementRules", script, StringComparison.Ordinal);
+        Assert.Contains("/config/replacements", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Program_ServesTheReplacementDictionary()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var program = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "ChurchSubtitle.Web",
+            "Program.cs"));
+
+        Assert.Contains("/config/replacements", program, StringComparison.Ordinal);
+        Assert.Contains("replacements.txt", program, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(repositoryRoot, "config", "replacements.txt")));
+    }
+
+    [Fact]
     public void Output_ReproducesLegacyCaptionBoardSpec()
     {
         var html = ReadAsset("output.html");

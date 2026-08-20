@@ -81,6 +81,13 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.Map("/ws/captions", CaptionWebSocketEndpoint.HandleAsync);
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+var replacementsPath = Path.Combine(repositoryRoot, "config", "replacements.txt");
+app.MapGet("/config/replacements", () =>
+    Results.Text(
+        File.Exists(replacementsPath)
+            ? File.ReadAllText(replacementsPath)
+            : string.Empty,
+        "text/plain; charset=utf-8"));
 app.MapGet("/test-assets/service.pcm", () =>
     Results.File(
         pcmPath,

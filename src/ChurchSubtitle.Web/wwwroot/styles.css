@@ -290,6 +290,93 @@ select:focus-visible {
   content: " ";
 }
 
+.editor-panel {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgb(16 20 27 / 94%);
+}
+
+.editor-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.editor-header h2 {
+  margin-bottom: 0;
+  font-size: 1rem;
+}
+
+.editor-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.final-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.final-list:empty::after {
+  content: "확정된 자막이 여기에 줄 단위로 표시됩니다.";
+  color: #737e8e;
+  font-size: 0.8rem;
+}
+
+.final-line {
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: #f5f7fb;
+  font-size: 0.95rem;
+  text-align: left;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.final-line:hover {
+  border-color: var(--border);
+  background: var(--surface-raised);
+}
+
+.edit-form,
+.manual-form {
+  margin-top: 12px;
+}
+
+.edit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.edit-form input,
+.manual-form input {
+  flex: 1;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-raised);
+  color: #fff;
+  font: inherit;
+}
+
+.manual-form input {
+  margin-top: 5px;
+}
+
 .privacy-note {
   margin: 16px 4px 0;
   color: #737e8e;

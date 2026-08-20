@@ -11,7 +11,10 @@ const {
   TOTAL_PCM_BYTES,
   createBrowserUi,
   createCaptionOutputPublisher,
+  createOperatorDesk,
+  createReplacementApplier,
   fetchSelectedPcm,
+  parseReplacementRules,
   pcmStartByteForVideoTime
 } = await import(appModuleUrl);
 
@@ -561,6 +564,181 @@ test("browser caption rendering scrolls only the overflowing top visual line", (
   assert.equal(captionText.setCalls, 2);
 });
 
+test("replacement rules parse, skip comments and invalid lines, and sort longest-first", () => {
+  const rules = parseReplacementRules([
+    "# 주석 줄",
+    "",
+    "에바 => X",
+    "에바다 => 에바다부",
+    "=> 대상없음",
+    "그대로 => 그대로",
+    "구분자없는줄"
+  ].join("\n"));
+
+  assert.deepEqual(rules, [
+    { from: "에바다", to: "에바다부" },
+    { from: "에바", to: "X" }
+  ]);
+});
+
+test("replacement applier matches longest-first and never re-matches its own output", () => {
+  const apply = createReplacementApplier(parseReplacementRules(
+    "에바 => X\n에바다 => 에바다부"
+  ));
+
+  assert.equal(apply("에바다 찬양과 에바"), "에바다부 찬양과 X");
+  assert.equal(createReplacementApplier([])("에바다"), "에바다");
+});
+
+test("incoming AI captions pass through the replacement dictionary", async () => {
+  const harness = createHarness({
+    applyReplacements: createReplacementApplier(parseReplacementRules("에바 다 => 에바다"))
+  });
+  const started = harness.controller.start({ delay: "low" });
+  await flushMicrotasks();
+  harness.socket.open();
+  await started;
+
+  harness.socket.message(update("partial", "line-a", 1, "에바 다 찬양"));
+  assert.equal(harness.ui.caption, "에바다 찬양");
+  harness.socket.message(update("final", "line-a", 2, "에바 다 찬양대"));
+  assert.equal(harness.ui.caption, "에바다 찬양대");
+});
+
+test("an operator edit replaces the projected line and locks out later AI updates", async () => {
+  const harness = await createConnectedHarness();
+  harness.socket.message(update("final", "line-a", 1, "첫 문장"));
+  harness.socket.message(update("final", "line-b", 1, "오타 문장"));
+
+  assert.equal(harness.controller.editFinal("line-b", "고친 문장"), true);
+
+  assert.equal(harness.ui.caption, "첫 문장 고친 문장");
+  harness.socket.message(update("final", "line-b", 9, "AI 재수정"));
+  harness.socket.message(update("partial", "line-b", 10, "AI 초안"));
+  assert.equal(harness.ui.caption, "첫 문장 고친 문장");
+  assert.equal(harness.controller.editFinal("line-x", "없는 줄"), false);
+});
+
+test("a blank operator edit deletes the line and blocks resurrection", async () => {
+  const harness = await createConnectedHarness();
+  harness.socket.message(update("final", "line-a", 1, "삭제될 문장"));
+  harness.socket.message(update("final", "line-b", 1, "남는 문장"));
+
+  harness.controller.editFinal("line-a", "   ");
+
+  assert.equal(harness.ui.caption, "남는 문장");
+  harness.socket.message(update("final", "line-a", 9, "되살아난 문장"));
+  assert.equal(harness.ui.caption, "남는 문장");
+});
+
+test("manual operator lines work without a session and skip replacements", () => {
+  const harness = createHarness({
+    applyReplacements: createReplacementApplier(parseReplacementRules("에바 다 => 에바다"))
+  });
+
+  assert.equal(harness.controller.insertManualLine(" 에바 다 수동 자막 "), true);
+  assert.equal(harness.controller.insertManualLine("   "), false);
+
+  assert.equal(harness.ui.caption, "에바 다 수동 자막");
+});
+
+test("the editable final list mirrors recent finals and is capped at eight", async () => {
+  const harness = await createConnectedHarness();
+
+  for (let index = 1; index <= 10; index += 1) {
+    harness.socket.message(update("final", `line-${index}`, 1, `문장${index}`));
+  }
+
+  assert.equal(harness.ui.finalLines.length, 8);
+  assert.deepEqual(harness.ui.finalLines.at(0), { lineId: "line-3", text: "문장3" });
+  assert.deepEqual(harness.ui.finalLines.at(-1), { lineId: "line-10", text: "문장10" });
+});
+
+test("starting a session clears the editable final list and operator locks", async () => {
+  const harness = createHarness({ fetchDeferred: true });
+  harness.controller.insertManualLine("이전 세션 수동 자막");
+  assert.equal(harness.ui.finalLines.length, 1);
+
+  const started = harness.controller.start({ delay: "low" });
+
+  assert.deepEqual(harness.ui.finalLines, []);
+  harness.controller.stop();
+  await started;
+});
+
+test("the operator desk edits a clicked line and reconciles button rows", async () => {
+  const harness = await createConnectedHarness();
+  harness.socket.message(update("final", "line-a", 1, "첫 문장"));
+  harness.socket.message(update("final", "line-b", 1, "오타 문장"));
+  const elements = createFakeDeskElements();
+  const desk = createOperatorDesk({
+    elements,
+    controller: harness.controller,
+    createElement: () => new FakeLineButton()
+  });
+
+  desk.renderFinals(harness.ui.finalLines);
+  assert.deepEqual(elements.finalList.children.map(button => button.textContent),
+    ["첫 문장", "오타 문장"]);
+
+  elements.finalList.children.at(-1).click();
+  assert.equal(elements.editForm.hidden, false);
+  assert.equal(elements.editInput.value, "오타 문장");
+  assert.equal(elements.editInput.focusCalls, 1);
+
+  elements.editInput.value = "고친 문장";
+  desk.submitEdit();
+  assert.equal(elements.editForm.hidden, true);
+  assert.equal(harness.ui.caption, "첫 문장 고친 문장");
+
+  harness.socket.message(update("final", "line-c", 1, "셋째 문장"));
+  harness.controller.editFinal("line-a", "");
+  desk.renderFinals(harness.ui.finalLines);
+  assert.deepEqual(elements.finalList.children.map(button => button.textContent),
+    ["고친 문장", "셋째 문장"]);
+});
+
+test("the operator desk inserts manual lines and keeps rejected input", async () => {
+  const harness = await createConnectedHarness();
+  const elements = createFakeDeskElements();
+  const desk = createOperatorDesk({
+    elements,
+    controller: harness.controller,
+    createElement: () => new FakeLineButton()
+  });
+
+  elements.manualInput.value = " 수동 자막 ";
+  desk.submitManual();
+  assert.equal(harness.ui.caption, "수동 자막");
+  assert.equal(elements.manualInput.value, "");
+
+  elements.manualInput.value = "   ";
+  desk.submitManual();
+  assert.equal(elements.manualInput.value, "   ");
+});
+
+test("the operator desk closes its editor without committing on cancel", async () => {
+  const harness = await createConnectedHarness();
+  harness.socket.message(update("final", "line-a", 1, "그대로 남는 문장"));
+  const elements = createFakeDeskElements();
+  const desk = createOperatorDesk({
+    elements,
+    controller: harness.controller,
+    createElement: () => new FakeLineButton()
+  });
+  desk.renderFinals(harness.ui.finalLines);
+
+  elements.finalList.children[0].click();
+  elements.editInput.value = "버려질 수정";
+  desk.closeEditor();
+  desk.submitEdit();
+
+  assert.equal(elements.editForm.hidden, true);
+  assert.equal(harness.ui.caption, "그대로 남는 문장");
+  harness.socket.message(update("final", "line-a", 2, "AI 수정"));
+  assert.equal(harness.ui.caption, "AI 수정");
+});
+
 test("browser caption rendering republishes captions to the output channel", () => {
   const captionText = new CountingTextElement({ clientHeight: 100, scrollHeight: 100 });
   const channel = new FakeBroadcastChannel();
@@ -865,6 +1043,7 @@ function createHarness(options = {}) {
   };
   harness.controller = new CaptionSessionController({
     ui,
+    applyReplacements: options.applyReplacements,
     fetchPcm,
     getPlayer: async () => {
       if (options.playerPreparationError) {
@@ -991,6 +1170,7 @@ class FakeUi {
     this.playerAvailable = true;
     this.caption = "";
     this.statuses = [];
+    this.finalLines = [];
   }
 
   setControlsRunning(running) { this.running = running; }
@@ -1002,7 +1182,63 @@ class FakeUi {
   renderCaption(text) {
     this.caption = text;
   }
+  renderFinalList(finals) {
+    this.finalLines = finals;
+  }
   get lastStatus() { return this.statuses.at(-1); }
+}
+
+function createFakeDeskElements() {
+  return {
+    finalList: {
+      children: [],
+      append(node) {
+        const index = this.children.indexOf(node);
+        if (index >= 0) {
+          this.children.splice(index, 1);
+        }
+        this.children.push(node);
+        node.parentNode = this;
+      }
+    },
+    editForm: { hidden: true },
+    editInput: {
+      value: "",
+      focusCalls: 0,
+      focus() { this.focusCalls += 1; }
+    },
+    manualInput: { value: "" }
+  };
+}
+
+class FakeLineButton {
+  constructor() {
+    this.type = "";
+    this.className = "";
+    this.textContent = "";
+    this.parentNode = null;
+    this.clickHandlers = [];
+  }
+
+  addEventListener(type, handler) {
+    if (type === "click") {
+      this.clickHandlers.push(handler);
+    }
+  }
+
+  click() {
+    for (const handler of [...this.clickHandlers]) {
+      handler();
+    }
+  }
+
+  remove() {
+    const index = this.parentNode?.children.indexOf(this) ?? -1;
+    if (index >= 0) {
+      this.parentNode.children.splice(index, 1);
+    }
+    this.parentNode = null;
+  }
 }
 
 class FakeBroadcastChannel {
