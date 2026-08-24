@@ -112,6 +112,22 @@ public sealed class WebUiAssetTests
     }
 
     [Fact]
+    public void Index_OffersManualAiOnlyAndHybridModes()
+    {
+        var html = ReadAsset("index.html");
+        Assert.Contains("id=\"mode\"", html, StringComparison.Ordinal);
+        Assert.Contains("<option value=\"manual\"", html, StringComparison.Ordinal);
+        Assert.Contains("<option value=\"ai\"", html, StringComparison.Ordinal);
+        Assert.Contains("<option value=\"hybrid\" selected", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"editor-panel\"", html, StringComparison.Ordinal);
+
+        var script = ReadAsset("app.js");
+        Assert.Contains("setMode(", script, StringComparison.Ordinal);
+        Assert.Contains("getMode(", script, StringComparison.Ordinal);
+        Assert.Contains("OPERATING_MODES", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Index_ProvidesOperatorEditingAndManualIntervention()
     {
         var html = ReadAsset("index.html");

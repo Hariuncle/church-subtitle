@@ -29,6 +29,15 @@
 
     <section class="control-bar" aria-label="자막 테스트 제어">
       <div class="field-group">
+        <label for="mode">운영 모드</label>
+        <select id="mode" name="mode">
+          <option value="manual">수동</option>
+          <option value="ai">AI 전용</option>
+          <option value="hybrid" selected>하이브리드</option>
+        </select>
+      </div>
+
+      <div class="field-group">
         <label for="delay">자막 지연</label>
         <select id="delay" name="delay">
           <option value="low" selected>낮음</option>
@@ -62,7 +71,7 @@
       </div>
     </section>
 
-    <section class="editor-panel" aria-label="자막 수정과 수동 개입">
+    <section id="editor-panel" class="editor-panel" aria-label="자막 수정과 수동 개입">
       <div class="editor-header">
         <div>
           <p class="eyebrow">OPERATOR DESK</p>

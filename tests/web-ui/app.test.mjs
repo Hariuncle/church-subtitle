@@ -739,6 +739,92 @@ test("the operator desk closes its editor without committing on cancel", async (
   assert.equal(harness.ui.caption, "AI 수정");
 });
 
+test("the operating mode defaults to hybrid and rejects unknown modes", () => {
+  const harness = createHarness();
+
+  assert.equal(harness.controller.getMode(), "hybrid");
+  assert.equal(harness.controller.setMode("unknown"), false);
+  assert.equal(harness.controller.getMode(), "hybrid");
+  assert.equal(harness.controller.setMode("manual"), true);
+  assert.equal(harness.controller.getMode(), "manual");
+});
+
+test("manual mode blocks AI session start but keeps operator captions working", async () => {
+  const harness = createHarness();
+  harness.controller.setMode("manual");
+
+  assert.equal(await harness.controller.start({ delay: "low" }), false);
+
+  assert.equal(harness.fetchCalls, 0);
+  assert.equal(harness.socketFactoryCalls, 0);
+  assert.equal(harness.controller.insertManualLine("수동 자막"), true);
+  assert.equal(harness.ui.caption, "수동 자막");
+  assert.equal(harness.controller.editFinal("manual-1", "고친 수동 자막"), true);
+  assert.equal(harness.ui.caption, "고친 수동 자막");
+});
+
+test("ai-only mode streams captions but blocks operator edits and manual lines", async () => {
+  const harness = createHarness();
+  harness.controller.setMode("ai");
+  const started = harness.controller.start({ delay: "low" });
+  await flushMicrotasks();
+  harness.socket.open();
+  await started;
+
+  harness.socket.message(update("final", "line-a", 1, "AI 문장"));
+
+  assert.equal(harness.ui.caption, "AI 문장");
+  assert.equal(harness.controller.editFinal("line-a", "수정 시도"), false);
+  assert.equal(harness.controller.insertManualLine("수동 시도"), false);
+  assert.equal(harness.ui.caption, "AI 문장");
+});
+
+test("the operating mode cannot change during an active run", async () => {
+  const harness = createHarness({ fetchDeferred: true });
+  const started = harness.controller.start({ delay: "low" });
+
+  assert.equal(harness.controller.setMode("manual"), false);
+  assert.equal(harness.controller.setMode("hybrid"), true);
+
+  harness.controller.stop();
+  await started;
+  assert.equal(harness.controller.setMode("manual"), true);
+});
+
+test("browser ui mode switching gates AI controls and the operator desk", () => {
+  const elements = {
+    delay: { disabled: false },
+    mode: { disabled: false },
+    startButton: { disabled: false },
+    stopButton: { disabled: false },
+    editorPanel: { hidden: false }
+  };
+  const ui = createBrowserUi(elements);
+  ui.setPlayerAvailable(true);
+  ui.setControlsRunning(false);
+
+  ui.setMode("manual");
+  assert.equal(elements.startButton.disabled, true);
+  assert.equal(elements.delay.disabled, true);
+  assert.equal(elements.editorPanel.hidden, false);
+  ui.setPlayerAvailable(true);
+  assert.equal(elements.startButton.disabled, true);
+
+  ui.setMode("ai");
+  assert.equal(elements.startButton.disabled, false);
+  assert.equal(elements.delay.disabled, false);
+  assert.equal(elements.editorPanel.hidden, true);
+
+  ui.setMode("hybrid");
+  assert.equal(elements.editorPanel.hidden, false);
+  assert.equal(elements.startButton.disabled, false);
+
+  ui.setControlsRunning(true);
+  assert.equal(elements.mode.disabled, true);
+  ui.setControlsRunning(false);
+  assert.equal(elements.mode.disabled, false);
+});
+
 test("browser caption rendering republishes captions to the output channel", () => {
   const captionText = new CountingTextElement({ clientHeight: 100, scrollHeight: 100 });
   const channel = new FakeBroadcastChannel();

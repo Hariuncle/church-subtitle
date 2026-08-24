@@ -15,6 +15,7 @@ const PLAYBACK_POLL_MS = 100;
 const MAX_PLAYBACK_DRIFT_SECONDS = 0.75;
 const MAX_UI_FINAL_FRAGMENTS = 64;
 const MAX_EDITABLE_FINALS = 8;
+const OPERATING_MODES = ["manual", "ai", "hybrid"];
 
 function normalizeCaptionFragment(text) {
   return text.trim().replace(/\s+/g, " ");
@@ -84,10 +85,26 @@ export class CaptionSessionController {
     this._lineWatermarks = new Map();
     this._operatorLocks = new Set();
     this._manualLineCounter = 0;
+    this._mode = "hybrid";
+  }
+
+  getMode() {
+    return this._mode;
+  }
+
+  setMode(mode) {
+    if (!OPERATING_MODES.includes(mode)) {
+      return false;
+    }
+    if (this._activeRun && mode !== this._mode) {
+      return false;
+    }
+    this._mode = mode;
+    return true;
   }
 
   async start({ delay }) {
-    if (this._activeRun) {
+    if (this._mode === "manual" || this._activeRun) {
       return false;
     }
 
@@ -542,6 +559,9 @@ export class CaptionSessionController {
   }
 
   editFinal(lineId, text) {
+    if (this._mode === "ai") {
+      return false;
+    }
     const entry = this._recentFinals.find(item => item.lineId === lineId);
     if (!entry) {
       return false;
@@ -561,6 +581,9 @@ export class CaptionSessionController {
   }
 
   insertManualLine(text) {
+    if (this._mode === "ai") {
+      return false;
+    }
     const trimmed = text.trim();
     if (!trimmed) {
       return false;
@@ -768,6 +791,8 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
 function bootstrapBrowser() {
   const elements = {
     delay: document.getElementById("delay"),
+    mode: document.getElementById("mode"),
+    editorPanel: document.getElementById("editor-panel"),
     startButton: document.getElementById("start-button"),
     stopButton: document.getElementById("stop-button"),
     statusBadge: document.getElementById("status-badge"),
@@ -854,6 +879,20 @@ function bootstrapBrowser() {
     createElement: tag => document.createElement(tag)
   });
   ui.renderFinalList = finals => desk.renderFinals(finals);
+
+  controller.setMode(elements.mode.value);
+  ui.setMode(elements.mode.value);
+  elements.mode.addEventListener("change", () => {
+    if (!controller.setMode(elements.mode.value)) {
+      elements.mode.value = controller.getMode();
+      return;
+    }
+    ui.setMode(elements.mode.value);
+    ui.setStatus(elements.mode.value === "manual" ? "수동 모드" : "대기", "idle");
+    if (elements.mode.value === "manual") {
+      elements.manualInput.focus();
+    }
+  });
 
   elements.startButton.addEventListener("click", () => {
     void controller.start({ delay: elements.delay.value });
@@ -1015,16 +1054,28 @@ export function createCaptionOutputPublisher(channel) {
 export function createBrowserUi(elements, publishCaption = null) {
   let controlsRunning = false;
   let playerAvailable = false;
+  let manualMode = false;
   return {
     setControlsRunning(running) {
       controlsRunning = running;
-      elements.delay.disabled = running;
-      elements.startButton.disabled = running || !playerAvailable;
+      elements.delay.disabled = running || manualMode;
+      elements.startButton.disabled = running || !playerAvailable || manualMode;
       elements.stopButton.disabled = !running;
+      if (elements.mode) {
+        elements.mode.disabled = running;
+      }
     },
     setPlayerAvailable(available) {
       playerAvailable = available;
-      elements.startButton.disabled = controlsRunning || !available;
+      elements.startButton.disabled = controlsRunning || !available || manualMode;
+    },
+    setMode(mode) {
+      manualMode = mode === "manual";
+      elements.delay.disabled = controlsRunning || manualMode;
+      elements.startButton.disabled = controlsRunning || !playerAvailable || manualMode;
+      if (elements.editorPanel) {
+        elements.editorPanel.hidden = mode === "ai";
+      }
     },
     setStatus(text, state) {
       if (elements.statusText.textContent !== text) {
